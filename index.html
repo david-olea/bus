@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    body { font-family: Arial; text-align: center; padding: 20px; }
+    #reader { width: 320px; margin: auto; }
+    #resultado { margin-top: 20px; font-size: 22px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>Check-in Bus</h2>
+  <div id="reader"></div>
+  <div id="resultado"></div>
+
+  <script>
+    // ← Pega aquí la URL de tu Web App de Apps Script
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/XXXXXXXX/exec";
+
+    let html5QrcodeScanner;
+
+    function success(decodedText) {
+      html5QrcodeScanner.clear();
+      document.getElementById("resultado").innerHTML = "⏳ Validando...";
+
+      fetch(APPS_SCRIPT_URL + "?codigo=" + encodeURIComponent(decodedText))
+        .then(res => res.json())
+        .then(data => {
+          const div = document.getElementById("resultado");
+          if (data.status === "OK") {
+            div.innerHTML = "✅ AUTORIZADO<br>" + data.nombre;
+          } else if (data.status === "YAINGRESO") {
+            div.innerHTML = "⚠️ YA INGRESÓ<br>" + data.nombre;
+          } else if (data.status === "NOPAGO") {
+            div.innerHTML = "❌ NO PAGÓ<br>" + data.nombre;
+          } else {
+            div.innerHTML = "❌ NO EXISTE";
+          }
+          setTimeout(startScanner, 3000);
+        })
+        .catch(err => {
+          document.getElementById("resultado").innerHTML = "❌ Error de conexión";
+          console.error(err);
+          setTimeout(startScanner, 3000);
+        });
+    }
+
+    function startScanner() {
+      document.getElementById("reader").innerHTML = "";
+      html5QrcodeScanner = new Html5QrcodeScanner(
+        "reader",
+        { fps: 10, qrbox: 250 },
+        false
+      );
+      html5QrcodeScanner.render(success);
+    }
+
+    startScanner();
+  </script>
+</body>
+</html>
